@@ -13,11 +13,27 @@
 # limitations under the License.
 #
 
-configure_file(${PROJECT_SOURCE_DIR}/tests/config.h.in ${PROJECT_SOURCE_DIR}/tests/config.h @ONLY)
+set(QUEUE_TESTS
+        btree_test
+        vector_map_test
+        vector_set_test
+)
 
-find_package(GTest REQUIRED)
 
-add_subdirectory(base)
-add_subdirectory(hashmaps)
-add_subdirectory(queue)
-add_subdirectory(maps)
+foreach (case IN LISTS QUEUE_TESTS)
+    kmcmake_cc_test(
+            NAME ${case}
+            MODULE maps
+            SOURCES
+            ${case}.cc
+            CXXOPTS
+            ${KMCMAKE_CXX_OPTIONS}
+            LINKS
+            fermat::base_testing_static
+            fermat::fermat_static
+            GTest::gtest
+            GTest::gmock
+            GTest::gtest_main
+            ${KMCMAKE_DEPS_LINK}
+    )
+endforeach ()

@@ -14,11 +14,17 @@
 # limitations under the License.
 #
 
-configure_file(${PROJECT_SOURCE_DIR}/benchmark/config.h.in ${PROJECT_SOURCE_DIR}/benchmark/config.h @ONLY)
 
-find_package(benchmark REQUIRED)
-
-add_subdirectory(base)
-add_subdirectory(hashmaps)
-add_subdirectory(maps)
-add_subdirectory(queue)
+kmcmake_cc_benchmark(
+        NAME layout_benchmark
+        MODULE base
+        SOURCES
+        layout_benchmark.cc
+        CXXOPTS
+        ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        fermat::fermat_static
+        benchmark::benchmark_main
+        benchmark::benchmark
+        ${KMCMAKE_DEPS_LINK}
+)

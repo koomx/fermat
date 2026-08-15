@@ -13,29 +13,40 @@
 # limitations under the License.
 #
 
-# Default exported target (install(EXPORT) requires at least one).
-# Teaching demos (foo / xxd / binaries) live in CMakeLists.examples.txt
-# and are installed only when generating with -DKMCMAKE_GEN_EXAMPLES=ON.
-
 kmcmake_cc_library(
         NAMESPACE ${PROJECT_NAME}
-        NAME fermat
+        NAME base_testing
         SOURCES
-        hashmaps/internal/raw_hash_set.cc
+        internal/test_instance_tracker.cc
+        #internal/exception_safety_testing.cc
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
         PLINKS
+        GTest::gtest
+        GTest::gmock
         ${KMCMAKE_DEPS_LINK}
-        PUBLIC
 )
 
-kmcmake_cc_interface(
-        NAMESPACE ${PROJECT_NAME}
-        NAME skills
-        HEADERS
-        skills.h
-        version.h
-        CXXOPTS
-        ${KMCMAKE_CXX_OPTIONS}
-        PUBLIC
+set(ALGO_TESTS
+        common_policy_traits_test
+        layout_test
 )
+
+
+foreach (case IN LISTS ALGO_TESTS)
+    kmcmake_cc_test(
+            NAME ${case}
+            MODULE base
+            SOURCES
+            ${case}.cc
+            CXXOPTS
+            ${KMCMAKE_CXX_OPTIONS}
+            LINKS
+            GTest::gtest
+            GTest::gmock
+            GTest::gtest_main
+            ${KMCMAKE_DEPS_LINK}
+    )
+endforeach ()
+
+add_subdirectory(internal)

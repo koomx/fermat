@@ -13,11 +13,25 @@
 # limitations under the License.
 #
 
-configure_file(${PROJECT_SOURCE_DIR}/tests/config.h.in ${PROJECT_SOURCE_DIR}/tests/config.h @ONLY)
+set(ALGO_TESTS
+        algorithm_test
+        container_test
+        compare_test
+)
 
-find_package(GTest REQUIRED)
-
-add_subdirectory(base)
-add_subdirectory(hashmaps)
-add_subdirectory(queue)
-add_subdirectory(maps)
+foreach (case IN LISTS ALGO_TESTS)
+    kmcmake_cc_test(
+            NAME ${case}
+            MODULE algo
+            SOURCES
+            ${case}.cc
+            CXXOPTS
+            ${KMCMAKE_CXX_OPTIONS}
+            LINKS
+            GTest::gtest
+            GTest::gmock
+            GTest::gtest_main
+            turbo::turbo_static
+            ${KMCMAKE_DEPS_LINK}
+    )
+endforeach ()
