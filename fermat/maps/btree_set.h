@@ -792,7 +792,7 @@ namespace fermat {
     namespace container_internal {
 
         // This type implements the necessary functions from the
-        // turbo::container_internal::slot_type interface for btree_(multi)set.
+        // fermat::container_internal::slot_type interface for btree_(multi)set.
         template <typename Key>
         struct set_slot_policy {
             using slot_type = Key;

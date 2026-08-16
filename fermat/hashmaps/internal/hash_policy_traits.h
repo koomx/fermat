@@ -21,10 +21,114 @@
 #include <utility>
 
 #include <fermat/base/common_policy_traits.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/meta/type_traits.h>
 
 namespace fermat::container_internal {
+
+    // Suppress erroneous uninitialized memory errors on GCC. For example, GCC
+    // thinks that the call to slot_array() in find_or_prepare_insert() is reading
+    // uninitialized memory, but slot_array is only called there when the table is
+    // non-empty and this memory is initialized when the table is non-empty.
+#if !defined(__clang__) && defined(__GNUC__)
+#define KUMO_SWISSTABLE_IGNORE_UNINITIALIZED(x)                     \
+    _Pragma("GCC diagnostic push")                                   \
+        _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")  \
+            _Pragma("GCC diagnostic ignored \"-Wuninitialized\"") x; \
+    _Pragma("GCC diagnostic pop")
+#define KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(x) \
+    KUMO_SWISSTABLE_IGNORE_UNINITIALIZED(return x)
+#else
+#define KUMO_SWISSTABLE_IGNORE_UNINITIALIZED(x) x
+#define KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(x) return x
+#endif
+
+
+
+    // Variadic arguments hash function that ignore the rest of the arguments.
+    // Useful for usage with policy traits.
+    template <class Hash, bool kIsDefault>
+    struct HashElement {
+        HashElement(const Hash& h, size_t s)
+            : hash(h)
+            , seed(s) {
+        }
+
+        template <class K, class... Args>
+        size_t operator()(const K& key, Args&&...) const {
+            if constexpr (kIsDefault) {
+                // TODO(b/384509507): resolve `no header providing
+                // "turbo::hash_internal::SupportsHashWithSeed" is directly included`.
+                // Maybe we should make "internal/hash.h" be a separate library.
+                return turbo::hash_internal::HashWithSeed().hash(hash, key, seed);
+            }
+            // NOLINTNEXTLINE(clang-diagnostic-sign-conversion)
+            return hash(key) ^ seed;
+        }
+
+        const Hash& hash;
+        size_t seed;
+    };
+
+    // No arguments function hash function for a specific key.
+    template <class Hash, class Key, bool kIsDefault>
+    struct HashKey {
+        HashKey(const Hash& h, const Key& k)
+            : hash(h)
+            , key(k) {
+        }
+
+        size_t operator()(size_t seed) const {
+            return HashElement<Hash, kIsDefault> { hash, seed }(key);
+        }
+
+        const Hash& hash;
+        const Key& key;
+    };
+
+    // Variadic arguments equality function that ignore the rest of the arguments.
+    // Useful for usage with policy traits.
+    template <class K1, class KeyEqual>
+    struct EqualElement {
+        template <class K2, class... Args>
+        bool operator()(const K2& lhs, Args&&...) const {
+            KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(eq(lhs, rhs));
+        }
+
+        const K1& rhs;
+        const KeyEqual& eq;
+    };
+
+    // Type erased function for computing hash of the slot.
+    using HashSlotFn = size_t (*)(const void* hash_fn, void* slot, size_t seed);
+
+    // Type erased function to apply `Fn` to data inside of the `slot`.
+    // The data is expected to have type `T`.
+    template <class Fn, class T, bool kIsDefault>
+    size_t type_erased_apply_to_slot_fn(const void* fn, void* slot, size_t seed) {
+        const auto* f = static_cast<const Fn*>(fn);
+        return HashElement<Fn, kIsDefault> { *f, seed }(*static_cast<const T*>(slot));
+    }
+
+    // Type erased function to apply `Fn` to data inside of the `*slot_ptr`.
+    // The data is expected to have type `T`.
+    template <class Fn, class T, bool kIsDefault>
+    size_t type_erased_deref_and_apply_to_slot_fn(const void* fn, void* slot_ptr,
+        size_t seed) {
+        const auto* f = static_cast<const Fn*>(fn);
+        const T* slot = *static_cast<T**>(slot_ptr);
+        return HashElement<Fn, kIsDefault> { *f, seed }(*slot);
+    }
+
+    // Type erased function to apply `Fn` to data inside of the `slot_ptr->first`.
+    // The data is expected to have type `T`.
+    template <class Fn, class T, bool kIsDefault>
+    size_t type_erased_deref_and_apply_to_slot_first_fn(const void* fn, void* slot_ptr,
+        size_t seed) {
+        const auto* f = static_cast<const Fn*>(fn);
+        const T* slot = *static_cast<T**>(slot_ptr);
+        return HashElement<Fn, kIsDefault> { *f, seed }(slot->first);
+    }
 
         // Defines how slots are initialized/destroyed/moved.
         template <class Policy, class = void>
@@ -144,7 +248,7 @@ namespace fermat::container_internal {
             }
 
             template <class Hash, bool kIsDefault>
-            static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+            static constexpr HashSlotFn get_hash_slot_fn() {
 // get_hash_slot_fn may return nullptr to signal that non type erased function
 // should be used. GCC warns against comparing function address with nullptr.
 #if defined(__GNUC__) && !defined(__clang__)
@@ -168,7 +272,7 @@ namespace fermat::container_internal {
             static size_t hash_slot_fn_non_type_erased(const void* hash_fn, void* slot,
                 size_t seed) {
                 return Policy::apply(
-                    turbo::container_internal::HashElement<Hash, kIsDefault> { *static_cast<const Hash*>(hash_fn), seed },
+                    HashElement<Hash, kIsDefault> { *static_cast<const Hash*>(hash_fn), seed },
                     Policy::element(static_cast<slot_type*>(slot)));
             }
 

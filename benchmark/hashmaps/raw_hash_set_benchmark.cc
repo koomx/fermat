@@ -31,7 +31,7 @@
 #include <fermat/hashmaps/internal/hash_function_defaults.h>
 #include <fermat/hashmaps/internal/raw_hash_set.h>
 #include <turbo/format/str_format.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 
 namespace fermat {
 
@@ -69,7 +69,7 @@ namespace fermat {
                 }
 
                 template <class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };
@@ -131,13 +131,13 @@ namespace fermat {
                 template <class F, class... Args>
                 static auto apply(F&& f, Args&&... args)
                     -> decltype(apply_impl(std::forward<F>(f),
-                        turbo::container_internal::PairArgs(std::forward<Args>(args)...))) {
+                        fermat::memory::pair_args(std::forward<Args>(args)...))) {
                     return apply_impl(std::forward<F>(f),
-                        turbo::container_internal::PairArgs(std::forward<Args>(args)...));
+                        fermat::memory::pair_args(std::forward<Args>(args)...));
                 }
 
                 template <class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };

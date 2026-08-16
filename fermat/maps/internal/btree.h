@@ -66,7 +66,7 @@
 #include <fermat/base/layout.h>
 #include <turbo/cord/cord.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/memory/memory.h>
 #include <turbo/meta/compressed_tuple.h>
 #include <turbo/meta/type_traits.h>
@@ -519,7 +519,7 @@ namespace fermat::container_internal {
                     ? prefers_linear_node_search<key_type>::value
                     : std::is_arithmetic_v<key_type> && (std::is_same_v<std::less<key_type>, original_key_compare> || std::is_same_v<std::greater<key_type>, original_key_compare>)>;
 
-            // This class is organized by turbo::container_internal::Layout as if it had
+            // This class is organized by fermat::container_internal::Layout as if it had
             // the following structure:
             //   // A pointer to the node's parent.
             //   btree_node *parent;
@@ -747,10 +747,10 @@ namespace fermat::container_internal {
             btree_node* start_child() const { return child(start()); }
             btree_node*& mutable_child(field_type i) { return GetField<4>()[i]; }
             void clear_child(field_type i) {
-                turbo::container_internal::SanitizerPoisonObject(&mutable_child(i));
+                fermat::memory::sanitizer_poison_object(&mutable_child(i));
             }
             void set_child_noupdate_position(field_type i, btree_node* c) {
-                turbo::container_internal::SanitizerUnpoisonObject(&mutable_child(i));
+                fermat::memory::sanitizer_unpoison_object(&mutable_child(i));
                 mutable_child(i) = c;
             }
             void set_child(field_type i, btree_node* c) {
@@ -944,7 +944,7 @@ namespace fermat::container_internal {
                 set_start(0);
                 set_finish(0);
                 set_max_count(max_count);
-                turbo::container_internal::SanitizerPoisonMemoryRegion(
+                fermat::memory::sanitizer_poison_memory_region(
                     start_slot(), max_count * sizeof(slot_type));
             }
             void init_internal(field_type position, btree_node* parent) {
@@ -952,14 +952,14 @@ namespace fermat::container_internal {
                 // Set `max_count` to a sentinel value to indicate that this node is
                 // internal.
                 set_max_count(kInternalNodeMaxCount);
-                turbo::container_internal::SanitizerPoisonMemoryRegion(
+                fermat::memory::sanitizer_poison_memory_region(
                     &mutable_child(start()), (kNodeSlots + 1) * sizeof(btree_node*));
             }
 
             static void deallocate(const size_type size, btree_node* node,
                 allocator_type* alloc) {
-                turbo::container_internal::SanitizerUnpoisonMemoryRegion(node, size);
-                turbo::container_internal::Deallocate<Alignment()>(alloc, node, size);
+                fermat::memory::sanitizer_unpoison_memory_region(node, size);
+                fermat::memory::good_deallocate<Alignment()>(alloc, node, size);
             }
 
             // Deletes a node and all of its children.
@@ -969,27 +969,27 @@ namespace fermat::container_internal {
             template <typename... Args>
             void value_init(const field_type i, allocator_type* alloc, Args&&... args) {
                 next_generation();
-                turbo::container_internal::SanitizerUnpoisonObject(slot(i));
+                fermat::memory::sanitizer_unpoison_object(slot(i));
                 params_type::construct(alloc, slot(i), std::forward<Args>(args)...);
             }
             void value_destroy(const field_type i, allocator_type* alloc) {
                 next_generation();
                 params_type::destroy(alloc, slot(i));
-                turbo::container_internal::SanitizerPoisonObject(slot(i));
+                fermat::memory::sanitizer_poison_object(slot(i));
             }
             void value_destroy_n(const field_type i, const field_type n,
                 allocator_type* alloc) {
                 next_generation();
                 for (slot_type *s = slot(i), *end = slot(i + n); s != end; ++s) {
                     params_type::destroy(alloc, s);
-                    turbo::container_internal::SanitizerPoisonObject(s);
+                    fermat::memory::sanitizer_poison_object(s);
                 }
             }
 
             static void transfer(slot_type* dest, slot_type* src, allocator_type* alloc) {
-                turbo::container_internal::SanitizerUnpoisonObject(dest);
+                fermat::memory::sanitizer_unpoison_object(dest);
                 params_type::transfer(alloc, dest, src);
-                turbo::container_internal::SanitizerPoisonObject(src);
+                fermat::memory::sanitizer_poison_object(src);
             }
 
             // Transfers value from slot `src_i` in `src_node` to slot `dest_i` in `this`.
@@ -1711,7 +1711,7 @@ namespace fermat::container_internal {
             // allocator.
             node_type* allocate(size_type size) {
                 return reinterpret_cast<node_type*>(
-                    turbo::container_internal::Allocate<node_type::Alignment()>(
+                    fermat::memory::good_allocate<node_type::Alignment()>(
                         mutable_allocator(), size));
             }
 

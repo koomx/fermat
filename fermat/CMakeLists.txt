@@ -22,6 +22,28 @@ kmcmake_cc_library(
         NAME fermat
         SOURCES
         hashmaps/internal/raw_hash_set.cc
+        roaring/isadetection.cc
+        roaring/array_util.cc
+        roaring/bitset_util.cc
+        roaring/art/art.cc
+        roaring/bitset.cc
+        roaring/containers/array.cc
+        roaring/containers/bitset.cc
+        roaring/containers/containers.cc
+        roaring/containers/convert.cc
+        roaring/containers/mixed_intersection.cc
+        roaring/containers/mixed_union.cc
+        roaring/containers/mixed_equal.cc
+        roaring/containers/mixed_subset.cc
+        roaring/containers/mixed_negation.cc
+        roaring/containers/mixed_xor.cc
+        roaring/containers/mixed_andnot.cc
+        roaring/containers/run.cc
+        roaring/memory.cc
+        roaring/roaring.cc
+        roaring/roaring64.cc
+        roaring/roaring_priority_queue.cc
+        roaring/roaring_array.cc
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
         PLINKS

@@ -21,7 +21,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 
 namespace fermat {
 
@@ -46,7 +46,7 @@ namespace fermat {
                 static std::function<Slot&(Slot*)> value;
 
                 template <class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };
@@ -100,7 +100,7 @@ namespace fermat {
                 }
 
                 template <class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };
@@ -109,8 +109,8 @@ namespace fermat {
 
             struct PolicyCustomHashFn : PolicyNoHashFn {
                 template <class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
-                    return &turbo::container_internal::TypeErasedApplyToSlotFn<Hash, int, kIsDefault>;
+                static constexpr HashSlotFn get_hash_slot_fn() {
+                    return &type_erased_apply_to_slot_fn<Hash, int, kIsDefault>;
                 }
             };
 
@@ -124,7 +124,7 @@ namespace fermat {
                     Hash, /*kIsDefault=*/false>();
                 EXPECT_NE(fn, nullptr);
                 EXPECT_EQ(fn(&hasher, &value, 100),
-                    (turbo::container_internal::HashElement<Hash, /*kIsDefault=*/false>(hasher, 100)(value)));
+                    (HashElement<Hash, /*kIsDefault=*/false>(hasher, 100)(value)));
                 EXPECT_EQ(apply_called_count, 1);
             }
 
@@ -139,11 +139,56 @@ namespace fermat {
                 EXPECT_EQ(
                     fn, (PolicyCustomHashFn::get_hash_slot_fn<Hash, /*kIsDefault=*/false>()));
                 EXPECT_EQ(fn(&hasher, &value, 100),
-                    (turbo::container_internal::HashElement<Hash, /*kIsDefault=*/false>(hasher, 100)(value)));
+                    (HashElement<Hash, /*kIsDefault=*/false>(hasher, 100)(value)));
                 EXPECT_EQ(apply_called_count, 0);
             }
 
         } // namespace
+
+        TEST(ApplyTest, type_erased_apply_to_slot_fn) {
+            size_t x = 7;
+            size_t seed = 100;
+            auto fn = [](size_t v) { return v * 2; };
+            EXPECT_EQ(
+                (type_erased_apply_to_slot_fn<decltype(fn), size_t, /*kIsDefault=*/false>(
+                    &fn, &x, seed)),
+                (HashElement<decltype(fn), /*kIsDefault=*/false>(fn, seed)(x)));
+        }
+
+        TEST(ApplyTest, type_erased_deref_and_apply_to_slot_fn) {
+            size_t x = 7;
+            size_t seed = 100;
+            auto fn = [](size_t v) { return v * 2; };
+            size_t* x_ptr = &x;
+            EXPECT_EQ((type_erased_deref_and_apply_to_slot_fn<decltype(fn), size_t,
+                          /*kIsDefault=*/false>(&fn, &x_ptr,
+                          seed)),
+                (HashElement<decltype(fn), /*kIsDefault=*/false>(fn, seed)(x)));
+        }
+
+        TEST(HashElement, DefaultHash) {
+            size_t x = 7;
+            size_t seed = 100;
+            struct HashWithSeed {
+                size_t operator()(size_t v) const { return v * 2; }
+                size_t hash_with_seed(size_t v, size_t seed) const {
+                    return v * 2 + seed * 3;
+                }
+            } hash;
+            EXPECT_EQ((HashElement<HashWithSeed, /*kIsDefault=*/true>(hash, seed)(x)),
+                hash.hash_with_seed(x, seed));
+        }
+
+        TEST(HashElement, NonDefaultHash) {
+            size_t x = 7;
+            size_t seed = 100;
+            auto fn = [](size_t v) { return v * 2; };
+            EXPECT_EQ(
+                (HashElement<decltype(fn), /*kIsDefault=*/false>(
+                    fn, seed)(x)),
+                fn(x) ^ seed);
+        }
+
     } // namespace container_internal
 
 } // namespace fermat

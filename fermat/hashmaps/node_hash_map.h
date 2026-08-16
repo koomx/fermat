@@ -47,7 +47,7 @@
 #include <turbo/algorithm/container.h>
 #include <fermat/hashmaps/internal/node_slot_policy.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/memory/memory.h>
 #include <turbo/meta/type_traits.h>
 
@@ -670,10 +670,10 @@ namespace fermat {
             }
 
             template <class F, class... Args>
-            static decltype(turbo::container_internal::DecomposePair(
+            static decltype(fermat::memory::decompose_pair(
                 std::declval<F>(), std::declval<Args>()...))
             apply(F&& f, Args&&... args) {
-                return turbo::container_internal::DecomposePair(std::forward<F>(f),
+                return fermat::memory::decompose_pair(std::forward<F>(f),
                     std::forward<Args>(args)...);
             }
 
@@ -685,9 +685,9 @@ namespace fermat {
             static const Value& value(const value_type* elem) { return elem->second; }
 
             template <class Hash, bool kIsDefault>
-            static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
-                return turbo::container_internal::memory_internal::IsLayoutCompatible<Key, Value>::value
-                    ? &turbo::container_internal::TypeErasedDerefAndApplyToSlotFirstFn<Hash, value_type,
+            static constexpr HashSlotFn get_hash_slot_fn() {
+                return fermat::memory::memory_internal::IsLayoutCompatible<Key, Value>::value
+                    ? &type_erased_deref_and_apply_to_slot_first_fn<Hash, value_type,
                           kIsDefault>
                     : nullptr;
             }

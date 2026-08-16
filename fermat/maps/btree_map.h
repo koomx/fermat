@@ -24,7 +24,7 @@
 #include <fermat/maps/internal/btree_container.h> // IWYU pragma: export
 #include <fermat/base/common.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 
 namespace fermat {
 
@@ -850,7 +850,7 @@ namespace fermat {
                       2, Params...>::value,
                   fermat::base_internal::GetFromListOr<typename btree_map_defaults<Key, Data>::IsMulti, 3,
                       Params...>::value,
-                  /*IsMap=*/true, turbo::container_internal::map_slot_policy<Key, Data>> {
+                  /*IsMap=*/true, fermat::memory::MapSlotPolicy<Key, Data>> {
             using super_type = typename map_params_impl::common_params;
             using mapped_type = Data;
             // This type allows us to move keys when it is safe to do so. It is safe

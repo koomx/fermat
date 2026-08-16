@@ -60,7 +60,7 @@ namespace fermat {
                 KUMO_ASSERT(size_hint >= size_t { 1 });
                 size_t allocation_bytes = AllocSize(size_hint);
                 void* mem;
-                std::tie(mem, allocation_bytes) = Allocate(allocation_bytes, alloc);
+                std::tie(mem, allocation_bytes) = good_allocate(allocation_bytes, alloc);
                 const size_t element_count = (allocation_bytes - start_offset()) / sizeof(T);
                 ChunkedQueueBlock* as_block = static_cast<ChunkedQueueBlock*>(mem);
                 ChunkedQueueBlockAllocator block_alloc(*alloc);
@@ -135,7 +135,7 @@ namespace fermat {
                 return (bytes + sizeof(T) - 1) / sizeof(T);
             }
 
-            static std::pair<void*, size_t> Allocate(size_t allocation_bytes,
+            static std::pair<void*, size_t> good_allocate(size_t allocation_bytes,
                 Allocator* alloc) {
                 // If we're using the default allocator, then we can use new.
                 void* mem;

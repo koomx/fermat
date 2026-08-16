@@ -27,7 +27,7 @@
 #include <fermat/hashmaps/internal/raw_hash_set.h>
 #include <fermat/base/tracked.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 
 namespace fermat {
 
@@ -185,7 +185,7 @@ namespace fermat {
                 static slot_type& element(slot_type* slot) { return *slot; }
 
                 template <class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };

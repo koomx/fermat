@@ -209,7 +209,7 @@
 #include <turbo/hash/hash.h>
 #include <turbo/hash/internal/weakly_mixed_integer.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/memory/memory.h>
 #include <turbo/meta/compressed_tuple.h>
 #include <turbo/meta/internal/iterator_traits.h>
@@ -221,6 +221,7 @@
 #endif
 
 namespace fermat::container_internal {
+
 
 #ifdef FERMAT_SWISSTABLE_ENABLE_GENERATIONS
 #error FERMAT_SWISSTABLE_ENABLE_GENERATIONS cannot be directly set
@@ -1139,7 +1140,7 @@ namespace fermat::container_internal {
         // constructing begin() iterators in empty hashtables.
         template <typename T>
         union MaybeInitializedPtr {
-            T* get() const { TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(p); }
+            T* get() const { KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(p); }
             void set(T* ptr) { p = ptr; }
 
             T* p;
@@ -1165,16 +1166,16 @@ namespace fermat::container_internal {
         // is true, the SOO slot is stored in `soo_data`. Otherwise, we use `heap`.
         union HeapOrSoo {
             MaybeInitializedPtr<ctrl_t>& control() {
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.control);
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.control);
             }
             MaybeInitializedPtr<ctrl_t> control() const {
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.control);
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.control);
             }
             void* get_soo_data() {
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(soo_data);
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(soo_data);
             }
             const void* get_soo_data() const {
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(soo_data);
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(soo_data);
             }
 
             HeapPtrs heap;
@@ -1231,7 +1232,7 @@ namespace fermat::container_internal {
                 ctrl_t* ctrl = heap_or_soo_.control().get();
                 [[maybe_unused]] size_t num_control_bytes = NumControlBytes(capacity());
                 KUMO_ASSUME(reinterpret_cast<uintptr_t>(ctrl + num_control_bytes) <= reinterpret_cast<uintptr_t>(this) || reinterpret_cast<uintptr_t>(this + 1) <= reinterpret_cast<uintptr_t>(ctrl));
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(ctrl);
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(ctrl);
             }
 
             void set_control(ctrl_t* c) { heap_or_soo_.control().set(c); }
@@ -1754,7 +1755,7 @@ namespace fermat::container_internal {
         // Allocates `n` bytes for a backing array.
         template <size_t AlignOfBackingArray, typename Alloc>
         void* AllocateBackingArray(void* alloc, size_t n) {
-            return turbo::container_internal::Allocate<AlignOfBackingArray>(static_cast<Alloc*>(alloc), n);
+            return fermat::memory::good_allocate<AlignOfBackingArray>(static_cast<Alloc*>(alloc), n);
         }
 
         template <size_t AlignOfBackingArray, typename Alloc>
@@ -1765,8 +1766,8 @@ namespace fermat::container_internal {
                 blocked_element_count);
             void* backing_array = ctrl - layout.control_offset();
             // Unpoison before returning the memory to the allocator.
-            turbo::container_internal::SanitizerUnpoisonMemoryRegion(backing_array, layout.alloc_size());
-            turbo::container_internal::Deallocate<AlignOfBackingArray>(static_cast<Alloc*>(alloc), backing_array,
+            fermat::memory::sanitizer_unpoison_memory_region(backing_array, layout.alloc_size());
+            fermat::memory::good_deallocate<AlignOfBackingArray>(static_cast<Alloc*>(alloc), backing_array,
                 layout.alloc_size());
         }
 
@@ -1787,7 +1788,7 @@ namespace fermat::container_internal {
             void* (*hash_fn)(CommonFields& common);
 
             // Returns the hash of the pointed-to slot.
-            turbo::container_internal::HashSlotFn hash_slot;
+            HashSlotFn hash_slot;
 
             // Transfers the contents of `count` slots from src_slot to dst_slot.
             // We use ability to transfer several slots in single group table growth.
@@ -3326,17 +3327,17 @@ namespace fermat::container_internal {
             template <class K>
             KUMO_ATTRIBUTE_ALWAYS_INLINE bool equal_to(const K& key,
                 slot_type* slot) const {
-                return PolicyTraits::apply(turbo::container_internal::EqualElement<K, key_equal> { key, eq_ref() },
+                return PolicyTraits::apply(EqualElement<K, key_equal> { key, eq_ref() },
                     PolicyTraits::element(slot));
             }
             template <class K>
             KUMO_ATTRIBUTE_ALWAYS_INLINE size_t hash_of(const K& key) const {
-                return turbo::container_internal::HashElement<hasher, kIsDefaultHash> { hash_ref(),
+                return HashElement<hasher, kIsDefaultHash> { hash_ref(),
                     common().seed().seed() }(key);
             }
             KUMO_ATTRIBUTE_ALWAYS_INLINE size_t hash_of(slot_type* slot) const {
                 return PolicyTraits::apply(
-                    turbo::container_internal::HashElement<hasher, kIsDefaultHash> { hash_ref(), common().seed().seed() },
+                    HashElement<hasher, kIsDefaultHash> { hash_ref(), common().seed().seed() },
                     PolicyTraits::element(slot));
             }
 
@@ -3468,7 +3469,7 @@ namespace fermat::container_internal {
                 slot = to_slot(GrowSooTableToNextCapacityAndPrepareInsert<
                     kUseMemcpy ? OptimalMemcpySizeForSooSlotTransfer(sizeof(slot_type)) : 0,
                     kUseMemcpy>(common(), GetPolicyFunctions(),
-                    turbo::container_internal::HashKey<hasher, K, kIsDefaultHash> { hash_ref(), key }));
+                    HashKey<hasher, K, kIsDefaultHash> { hash_ref(), key }));
                 return { slot, true };
             }
 
@@ -3486,7 +3487,7 @@ namespace fermat::container_internal {
                 }
                 return { to_slot(PrepareInsertSmallNonSoo(
                              common(), GetPolicyFunctions(),
-                             turbo::container_internal::HashKey<hasher, K, kIsDefaultHash> { hash_ref(), key })),
+                             HashKey<hasher, K, kIsDefaultHash> { hash_ref(), key })),
                     true };
             }
 
@@ -3519,7 +3520,7 @@ namespace fermat::container_internal {
                             ? PrepareInsertLargeGenerationsEnabled(
                                   common(), GetPolicyFunctions(), hash, mask_empty,
                                   FindInfo { target_group_offset, seq.index() },
-                                  turbo::container_internal::HashKey<hasher, K, kIsDefaultHash> { hash_ref(), key })
+                                  HashKey<hasher, K, kIsDefaultHash> { hash_ref(), key })
                             : PrepareInsertLarge(
                                   common(), GetPolicyFunctions(), hash, mask_empty,
                                   FindInfo { target_group_offset, seq.index() });
@@ -3664,11 +3665,11 @@ namespace fermat::container_internal {
             }
             slot_type* soo_slot() {
                 FERMAT_SWISSTABLE_ASSERT(is_soo());
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(
                     static_cast<slot_type*>(common().soo_data()));
             }
             const slot_type* soo_slot() const {
-                TURBO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(
+                KUMO_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(
                     const_cast<raw_hash_set*>(this)->soo_slot());
             }
             slot_type* single_slot() {
@@ -3684,7 +3685,7 @@ namespace fermat::container_internal {
                 FERMAT_SWISSTABLE_ASSERT(is_small());
                 SooEnabled() ? common().set_empty_soo() : common().decrement_size();
                 if (!SooEnabled()) {
-                    SanitizerPoisonObject(single_slot());
+                    sanitizer_poison_object(single_slot());
                 }
             }
             iterator single_iterator() {
@@ -3780,9 +3781,9 @@ namespace fermat::container_internal {
                         FERMAT_SWISSTABLE_ASSERT(IsEmpty(new_ctrl[new_index]));
                         new_ctrl[new_index] = static_cast<ctrl_t>(h2);
                         auto* new_slot = new_slots + new_index;
-                        turbo::container_internal::SanitizerUnpoisonMemoryRegion(new_slot, sizeof(slot_type));
+                        fermat::memory::sanitizer_unpoison_memory_region(new_slot, sizeof(slot_type));
                         set->transfer(new_slot, old_slot);
-                        turbo::container_internal::SanitizerPoisonMemoryRegion(old_slot, sizeof(slot_type));
+                        fermat::memory::sanitizer_poison_memory_region(old_slot, sizeof(slot_type));
                     }
                 }
             }

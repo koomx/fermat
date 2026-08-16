@@ -40,7 +40,7 @@
 #include <turbo/algorithm/container.h>
 #include <fermat/hashmaps/internal/raw_hash_set.h> // IWYU pragma: export
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/memory/memory.h>
 #include <turbo/meta/type_traits.h>
 
@@ -571,24 +571,24 @@ namespace fermat {
             template <class Allocator>
             static auto destroy(Allocator* alloc, slot_type* slot) {
                 std::allocator_traits<Allocator>::destroy(*alloc, slot);
-                return turbo::container_internal::IsDestructionTrivial<Allocator, slot_type>();
+                return fermat::memory::is_destruction_trivial<Allocator, slot_type>();
             }
 
             static T& element(slot_type* slot) { return *slot; }
 
             template <class F, class... Args>
-            static decltype(turbo::container_internal::DecomposeValue(
+            static decltype(fermat::memory::decompose_value(
                 std::declval<F>(), std::declval<Args>()...))
             apply(F&& f, Args&&... args) {
-                return turbo::container_internal::DecomposeValue(
+                return fermat::memory::decompose_value(
                     std::forward<F>(f), std::forward<Args>(args)...);
             }
 
             static size_t space_used(const T*) { return 0; }
 
             template <class Hash, bool kIsDefault>
-            static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
-                return &turbo::container_internal::TypeErasedApplyToSlotFn<Hash, T, kIsDefault>;
+            static constexpr HashSlotFn get_hash_slot_fn() {
+                return &type_erased_apply_to_slot_fn<Hash, T, kIsDefault>;
             }
         };
     } // namespace container_internal

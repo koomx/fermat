@@ -13,5 +13,23 @@
 # limitations under the License.
 #
 
-# Stub. Teaching binaries are in CMakeLists.examples.txt
-# (installed when generating with -DKMCMAKE_GEN_EXAMPLES=ON).
+set(ROARING_EXAMPLES
+        c_example1
+        c_readme_example
+        cpp_example1
+        cpp_example2
+        cpp_readme_example
+)
+
+foreach (case IN LISTS ROARING_EXAMPLES)
+    kmcmake_cc_binary(
+            NAME ${case}
+            SOURCES
+            roaring/${case}.cc
+            CXXOPTS
+            ${KMCMAKE_CXX_OPTIONS}
+            LINKS
+            fermat::fermat_static
+            ${KMCMAKE_DEPS_LINK}
+    )
+endforeach ()

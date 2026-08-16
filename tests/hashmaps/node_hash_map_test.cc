@@ -357,8 +357,8 @@ TEST(NodeHashMap, FromRange) {
 TEST(NodeHashMap, FromRangeWithAllocator) {
   std::vector<std::pair<int, int>> v = {{1, 2}, {3, 4}, {5, 6}};
   fermat::node_hash_map<int, int,
-                      turbo::container_internal::hash_default_hash<int>,
-                      turbo::container_internal::hash_default_eq<int>,
+                      fermat::container_internal::hash_default_hash<int>,
+                      fermat::container_internal::hash_default_eq<int>,
                       Alloc<std::pair<const int, int>>>
       m(std::from_range, v, 0, Alloc<std::pair<const int, int>>());
   EXPECT_THAT(m, UnorderedElementsAre(Pair(1, 2), Pair(3, 4), Pair(5, 6)));
@@ -366,9 +366,9 @@ TEST(NodeHashMap, FromRangeWithAllocator) {
 
 TEST(NodeHashMap, FromRangeWithHasherAndAllocator) {
   std::vector<std::pair<int, int>> v = {{1, 2}, {3, 4}, {5, 6}};
-  using TestingHash = turbo::container_internal::StatefulTestingHash;
+  using TestingHash = fermat::container_internal::StatefulTestingHash;
   fermat::node_hash_map<int, int, TestingHash,
-                      turbo::container_internal::hash_default_eq<int>,
+                      fermat::container_internal::hash_default_eq<int>,
                       Alloc<std::pair<const int, int>>>
       m(std::from_range, v, 0, TestingHash{},
         Alloc<std::pair<const int, int>>());

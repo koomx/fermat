@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 #include <fermat/hashmaps/internal/raw_hash_set.h>
 
@@ -32,12 +33,12 @@
 #include <turbo/functional/function_ref.h>
 #include <turbo/hash/hash.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 
 namespace fermat::container_internal {
 
         // Represents a control byte corresponding to a full slot with arbitrary hash.
-        constexpr ctrl_t ZeroCtrlT() {
+        constexpr ctrl_t zero_ctrl_t() {
             return static_cast<ctrl_t>(0);
         }
 
@@ -46,11 +47,11 @@ namespace fermat::container_internal {
         KUMO_DLL char kDefaultIterSlot;
 
         // We need one full byte followed by a sentinel byte for iterator::operator++.
-        KUMO_CONST_INIT KUMO_DLL const ctrl_t kSooControl[2] = { ZeroCtrlT(),
+        KUMO_CONST_INIT KUMO_DLL const ctrl_t kSooControl[2] = { zero_ctrl_t(),
             ctrl_t::kSentinel };
         // We need one full byte followed by a sentinel byte for iterator::operator++.
         KUMO_CONST_INIT KUMO_DLL const ctrl_t kInsertIteratorControl[2] = {
-            ZeroCtrlT(), ctrl_t::kSentinel
+            zero_ctrl_t(), ctrl_t::kSentinel
         };
 
         namespace {
@@ -77,7 +78,7 @@ namespace fermat::container_internal {
             }
 
             // Returns "random" seed.
-            inline size_t RandomSeed() {
+            inline size_t random_seed() {
                 constexpr size_t kIncrement = 0xad53;
 #if KUMO_HAVE_THREAD_LOCAL
                 static thread_local size_t counter = 0;
@@ -96,7 +97,7 @@ namespace fermat::container_internal {
                 // `min(1, RehashProbabilityConstant() / capacity())`. In order to do this,
                 // we probe based on a random hash and see if the offset is less than
                 // RehashProbabilityConstant().
-                return probe(ProbeCapacity { capacity }, turbo::HashOf(RandomSeed()))
+                return probe(ProbeCapacity { capacity }, turbo::HashOf(random_seed()))
                            .offset()
                     < RehashProbabilityConstant();
             }
@@ -141,7 +142,7 @@ namespace fermat::container_internal {
         // which is caused by non-constexpr initialization.
         uint16_t NextHashTableSeed() {
             static_assert(PerTableSeed::kBitCount <= 16);
-            return static_cast<uint16_t>(RandomSeed());
+            return static_cast<uint16_t>(random_seed());
         }
 
         GenerationType* EmptyGeneration() {
@@ -149,7 +150,7 @@ namespace fermat::container_internal {
                 constexpr size_t kNumEmptyGenerations = 1024;
                 static constexpr GenerationType kEmptyGenerations[kNumEmptyGenerations] { };
                 return const_cast<GenerationType*>(
-                    &kEmptyGenerations[RandomSeed() % kNumEmptyGenerations]);
+                    &kEmptyGenerations[random_seed() % kNumEmptyGenerations]);
             }
             return nullptr;
         }
@@ -474,9 +475,9 @@ namespace fermat::container_internal {
                 FERMAT_SWISSTABLE_ASSERT(i < cap);
                 auto* slot_i = static_cast<const char*>(c.slot_array(cap)) + i * slot_size;
                 if (IsFull(h)) {
-                    turbo::container_internal::SanitizerUnpoisonMemoryRegion(slot_i, slot_size);
+                    fermat::memory::sanitizer_unpoison_memory_region(slot_i, slot_size);
                 } else {
-                    turbo::container_internal::SanitizerPoisonMemoryRegion(slot_i, slot_size);
+                    fermat::memory::sanitizer_poison_memory_region(slot_i, slot_size);
                 }
             }
 
@@ -589,7 +590,6 @@ namespace fermat::container_internal {
                 auto transfer_n = policy.transfer_n;
                 const size_t slot_size = policy.slot_size;
 
-                size_t total_probe_length = 0;
                 void* slot_ptr = SlotAddress(slot_array, 0, slot_size);
 
                 // The index of an empty slot that can be used as temporary memory for
@@ -609,7 +609,6 @@ namespace fermat::container_internal {
                     const size_t hash = (*hasher)(hash_fn, slot_ptr, common.seed().seed());
                     const FindInfo target = find_first_non_full(common, hash);
                     const size_t new_i = target.offset;
-                    total_probe_length += target.probe_length;
 
                     // Verify if the old and new i fall within the same group wrt the hash.
                     // If they do, we don't need to move the object as it falls already in the
@@ -645,14 +644,14 @@ namespace fermat::container_internal {
                             tmp_space_id = FindEmptySlot(i + 1, capacity, ctrl);
                         }
                         void* tmp_space = SlotAddress(slot_array, tmp_space_id, slot_size);
-                        turbo::container_internal::SanitizerUnpoisonMemoryRegion(tmp_space, slot_size);
+                        fermat::memory::sanitizer_unpoison_memory_region(tmp_space, slot_size);
 
                         // Swap i and new_i elements.
                         (*transfer_n)(set, tmp_space, new_slot_ptr, 1);
                         (*transfer_n)(set, new_slot_ptr, slot_ptr, 1);
                         (*transfer_n)(set, slot_ptr, tmp_space, 1);
 
-                        turbo::container_internal::SanitizerPoisonMemoryRegion(tmp_space, slot_size);
+                        fermat::memory::sanitizer_poison_memory_region(tmp_space, slot_size);
 
                         // repeat the processing of the ith slot
                         --i;
@@ -707,7 +706,7 @@ namespace fermat::container_internal {
                         capacity + 1 + NumClonedBytes());
                 }
                 ctrl[capacity] = ctrl_t::kSentinel;
-                turbo::container_internal::SanitizerPoisonMemoryRegion(common.slot_array(capacity),
+                fermat::memory::sanitizer_poison_memory_region(common.slot_array(capacity),
                     slot_size * (capacity - blocked_element_count));
                 BlockControlBytes(common, blocked_element_count);
             }
@@ -805,7 +804,7 @@ namespace fermat::container_internal {
                 return;
             }
             c.decrement_size();
-            turbo::container_internal::SanitizerPoisonMemoryRegion(SingleSlotAddress</*kSooEnabled=*/false>(c),
+            fermat::memory::sanitizer_poison_memory_region(SingleSlotAddress</*kSooEnabled=*/false>(c),
                 slot_size);
         }
 
@@ -1044,9 +1043,9 @@ namespace fermat::container_internal {
                 const size_t soo_slot_hash = policy.hash_slot(policy.hash_fn(c), c.soo_data(), c.seed().seed());
                 size_t offset = probe(ProbeCapacity { new_capacity }, soo_slot_hash).offset();
                 offset = offset == new_capacity ? 0 : offset;
-                turbo::container_internal::SanitizerPoisonMemoryRegion(new_slots, policy.slot_size * new_capacity);
+                fermat::memory::sanitizer_poison_memory_region(new_slots, policy.slot_size * new_capacity);
                 void* target_slot = SlotAddress(new_slots, offset, policy.slot_size);
-                turbo::container_internal::SanitizerUnpoisonMemoryRegion(target_slot, policy.slot_size);
+                fermat::memory::sanitizer_unpoison_memory_region(target_slot, policy.slot_size);
                 policy.transfer_n(&c, target_slot, c.soo_data(), 1);
                 c.set_control(new_ctrl);
                 ResetCtrl(c, policy.slot_size, /*blocked_element_count=*/0);
@@ -1253,7 +1252,7 @@ namespace fermat::container_internal {
                     FERMAT_SWISSTABLE_ASSERT(IsEmpty(new_ctrl[new_i]));
                     void* src_slot = SlotAddress(old_slots, old_index, slot_size);
                     void* dst_slot = SlotAddress(new_slots, new_i, slot_size);
-                    turbo::container_internal::SanitizerUnpoisonMemoryRegion(dst_slot, slot_size);
+                    fermat::memory::sanitizer_unpoison_memory_region(dst_slot, slot_size);
                     transfer_n(&c, dst_slot, src_slot, 1);
                     SetCtrlInLargeTable(c, new_i, static_cast<h2_t>(start->h2), slot_size);
                 }
@@ -1539,7 +1538,7 @@ namespace fermat::container_internal {
                 const PolicyFunctions& __restrict policy) {
                 FERMAT_SWISSTABLE_ASSERT(common.is_small());
                 common.increment_size();
-                turbo::container_internal::SanitizerUnpoisonMemoryRegion(
+                fermat::memory::sanitizer_unpoison_memory_region(
                     SingleSlotAddress</*kSooEnabled=*/false>(common), policy.slot_size);
             }
 
@@ -1575,7 +1574,7 @@ namespace fermat::container_internal {
                 const auto [new_ctrl, new_slots] = AllocBackingArray(common, policy, kNewCapacity, alloc,
                     /*blocked_element_count=*/0);
                 common.set_control(new_ctrl);
-                turbo::container_internal::SanitizerPoisonMemoryRegion(new_slots, kNewCapacity * slot_size);
+                fermat::memory::sanitizer_poison_memory_region(new_slots, kNewCapacity * slot_size);
 
                 common.generate_new_seed();
                 const size_t new_hash = get_hash(common.seed().seed());
@@ -1585,11 +1584,11 @@ namespace fermat::container_internal {
                 InitializeThreeElementsControlBytes(H2(orig_hash), new_h2, offset, new_ctrl);
 
                 void* old_element_target = NextSlot(new_slots, slot_size);
-                turbo::container_internal::SanitizerUnpoisonMemoryRegion(old_element_target, slot_size);
+                fermat::memory::sanitizer_unpoison_memory_region(old_element_target, slot_size);
                 policy.transfer_n(&common, old_element_target, old_slots, 1);
 
                 void* new_element_target_slot = SlotAddress(new_slots, offset, slot_size);
-                turbo::container_internal::SanitizerUnpoisonMemoryRegion(new_element_target_slot, slot_size);
+                fermat::memory::sanitizer_unpoison_memory_region(new_element_target_slot, slot_size);
 
                 policy.dealloc(alloc, kOldCapacity,
                     // old_slots == old_ctrl in case of capacity == 1.
@@ -1629,7 +1628,7 @@ namespace fermat::container_internal {
                 const auto [new_ctrl, new_slots] = AllocBackingArray(common, policy, new_capacity, alloc,
                     /*blocked_element_count=*/0);
                 common.set_control(new_ctrl);
-                turbo::container_internal::SanitizerPoisonMemoryRegion(new_slots, new_capacity * slot_size);
+                fermat::memory::sanitizer_poison_memory_region(new_slots, new_capacity * slot_size);
 
                 h2_t new_h2 = H2(new_hash);
                 FindInfo find_info;
@@ -1650,7 +1649,7 @@ namespace fermat::container_internal {
                     // all slots without checking the control bytes.
                     FERMAT_SWISSTABLE_ASSERT(common.size() + old_blocked_element_count == old_capacity);
                     void* target = NextSlot(new_slots, slot_size);
-                    turbo::container_internal::SanitizerUnpoisonMemoryRegion(target, old_size * slot_size);
+                    fermat::memory::sanitizer_unpoison_memory_region(target, old_size * slot_size);
                     policy.transfer_n(&common, target, old_slots, old_size);
                 } else {
                     GrowToNextCapacityDispatch(common, policy, old_ctrl, old_slots);
@@ -1922,9 +1921,9 @@ namespace fermat::container_internal {
             InitializeThreeElementsControlBytes(soo_slot_h2, H2(new_hash), offset,
                 new_ctrl);
 
-            turbo::container_internal::SanitizerPoisonMemoryRegion(new_slots, slot_size * kNewCapacity);
+            fermat::memory::sanitizer_poison_memory_region(new_slots, slot_size * kNewCapacity);
             void* target_slot = SlotAddress(new_slots, SooSlotIndex(), slot_size);
-            turbo::container_internal::SanitizerUnpoisonMemoryRegion(target_slot, slot_size);
+            fermat::memory::sanitizer_unpoison_memory_region(target_slot, slot_size);
             if constexpr (TransferUsesMemcpy) {
                 // Target slot is placed at index 1, but capacity is at
                 // minimum 3. So we are allowed to copy at least twice as much
@@ -1935,9 +1934,9 @@ namespace fermat::container_internal {
                 FERMAT_SWISSTABLE_ASSERT(SooSlotMemcpySize <= 2 * slot_size);
                 FERMAT_SWISSTABLE_ASSERT(SooSlotMemcpySize >= slot_size);
                 void* next_slot = SlotAddress(target_slot, 1, slot_size);
-                turbo::container_internal::SanitizerUnpoisonMemoryRegion(next_slot, SooSlotMemcpySize - slot_size);
+                fermat::memory::sanitizer_unpoison_memory_region(next_slot, SooSlotMemcpySize - slot_size);
                 std::memcpy(target_slot, common.soo_data(), SooSlotMemcpySize);
-                turbo::container_internal::SanitizerPoisonMemoryRegion(next_slot, SooSlotMemcpySize - slot_size);
+                fermat::memory::sanitizer_poison_memory_region(next_slot, SooSlotMemcpySize - slot_size);
             } else {
                 static_assert(SooSlotMemcpySize == 0);
                 policy.transfer_n(&common, target_slot, common.soo_data(), 1);
@@ -1945,7 +1944,7 @@ namespace fermat::container_internal {
             common.set_control(new_ctrl);
 
             void* new_slot = SlotAddress(new_slots, offset, slot_size);
-            turbo::container_internal::SanitizerUnpoisonMemoryRegion(new_slot, slot_size);
+            fermat::memory::sanitizer_unpoison_memory_region(new_slot, slot_size);
             return new_slot;
         }
 

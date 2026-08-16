@@ -63,7 +63,7 @@
 #include <turbo/log/kcheck.h>
 #include <turbo/log/klog.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/memory/memory.h>
 #include <turbo/meta/type_traits.h>
 #include <turbo/numeric/int128.h>
@@ -198,11 +198,11 @@ namespace fermat {
             public:
                 explicit GrowthInfoAllocator(size_t capacity) {
                     if (capacity <= GrowthInfoLowerBound::kMaxGrowthLeftLowerBound) {
-                        turbo::container_internal::SanitizerPoisonMemoryRegion(control_.data(), 7);
+                        fermat::memory::sanitizer_poison_memory_region(control_.data(), 7);
                     }
-                    turbo::container_internal::SanitizerPoisonMemoryRegion(control_.data() + kControlStart, 1);
+                    fermat::memory::sanitizer_poison_memory_region(control_.data() + kControlStart, 1);
                     if constexpr (NumGenerationBytes() > 0) {
-                        turbo::container_internal::SanitizerPoisonMemoryRegion(
+                        fermat::memory::sanitizer_poison_memory_region(
                                 control_.data() + kControlStart + NumGenerationBytes(),
                                 NumGenerationBytes());
                     }
@@ -846,15 +846,15 @@ namespace fermat {
                 static T &element(slot_type *slot) { return *slot; }
 
                 template<class F, class... Args>
-                static decltype(turbo::container_internal::DecomposeValue(
+                static decltype(fermat::memory::decompose_value(
                         std::declval<F>(), std::declval<Args>()...))
                 apply(F &&f, Args &&... args) {
-                    return turbo::container_internal::DecomposeValue(
+                    return fermat::memory::decompose_value(
                             std::forward<F>(f), std::forward<Args>(args)...);
                 }
 
                 template<class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
 
@@ -1016,13 +1016,13 @@ namespace fermat {
                 template<class F, class... Args>
                 static auto apply(F &&f, Args &&... args)
                 -> decltype(apply_impl(std::forward<F>(f),
-                                       turbo::container_internal::PairArgs(std::forward<Args>(args)...))) {
+                                       fermat::memory::pair_args(std::forward<Args>(args)...))) {
                     return apply_impl(std::forward<F>(f),
-                                      turbo::container_internal::PairArgs(std::forward<Args>(args)...));
+                                      fermat::memory::pair_args(std::forward<Args>(args)...));
                 }
 
                 template<class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };
@@ -2706,7 +2706,7 @@ namespace fermat {
                 }
 
                 template<class Hash, bool kIsDefault>
-                static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
+                static constexpr HashSlotFn get_hash_slot_fn() {
                     return nullptr;
                 }
             };

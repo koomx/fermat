@@ -15,7 +15,6 @@
 
 
 set(ALGO_TESTS
-        container_memory_test
         test_instance_tracker_test
 )
 

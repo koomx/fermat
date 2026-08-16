@@ -45,7 +45,7 @@
 #include <fermat/hashmaps/internal/node_slot_policy.h>
 #include <fermat/hashmaps/internal/raw_hash_set.h> // IWYU pragma: export
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/memory/memory.h>
 #include <turbo/meta/type_traits.h>
 
@@ -572,18 +572,18 @@ namespace fermat {
             }
 
             template <class F, class... Args>
-            static decltype(turbo::container_internal::DecomposeValue(
+            static decltype(fermat::memory::decompose_value(
                 std::declval<F>(), std::declval<Args>()...))
             apply(F&& f, Args&&... args) {
-                return turbo::container_internal::DecomposeValue(
+                return fermat::memory::decompose_value(
                     std::forward<F>(f), std::forward<Args>(args)...);
             }
 
             static size_t element_space_used(const T*) { return sizeof(T); }
 
             template <class Hash, bool kIsDefault>
-            static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
-                return &turbo::container_internal::TypeErasedDerefAndApplyToSlotFn<Hash, T, kIsDefault>;
+            static constexpr HashSlotFn get_hash_slot_fn() {
+                return &type_erased_deref_and_apply_to_slot_fn<Hash, T, kIsDefault>;
             }
         };
     } // namespace container_internal

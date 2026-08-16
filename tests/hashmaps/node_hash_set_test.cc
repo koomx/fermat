@@ -196,8 +196,8 @@ TEST(NodeHashSet, FromRange) {
 
 TEST(NodeHashSet, FromRangeWithAllocator) {
   std::vector<int> v = {1, 2, 3, 4, 5};
-  turbo::node_hash_set<int, turbo::container_internal::hash_default_hash<int>,
-                      turbo::container_internal::hash_default_eq<int>,
+  turbo::node_hash_set<int, fermat::container_internal::hash_default_hash<int>,
+                      fermat::container_internal::hash_default_eq<int>,
                       Alloc<int>>
       s(std::from_range, v, 0, Alloc<int>());
   EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));
@@ -205,9 +205,9 @@ TEST(NodeHashSet, FromRangeWithAllocator) {
 
 TEST(NodeHashSet, FromRangeWithHasherAndAllocator) {
   std::vector<int> v = {1, 2, 3, 4, 5};
-  using TestingHash = turbo::container_internal::StatefulTestingHash;
+  using TestingHash = fermat::container_internal::StatefulTestingHash;
   turbo::node_hash_set<int, TestingHash,
-                      turbo::container_internal::hash_default_eq<int>,
+                      fermat::container_internal::hash_default_eq<int>,
                       Alloc<int>>
       s(std::from_range, v, 0, TestingHash{}, Alloc<int>());
   EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));

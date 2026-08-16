@@ -40,7 +40,7 @@
 #include <fermat/hashmaps/internal/raw_hash_map.h> // IWYU pragma: export
 #include <turbo/algorithm/container.h>
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/meta/type_traits.h>
 
 namespace fermat {
@@ -654,7 +654,7 @@ namespace fermat {
 
         template <class K, class V>
         struct FlatHashMapPolicy {
-            using slot_policy = turbo::container_internal::map_slot_policy<K, V>;
+            using slot_policy = fermat::memory::MapSlotPolicy<K, V>;
             using slot_type = typename slot_policy::slot_type;
             using key_type = K;
             using mapped_type = V;
@@ -682,17 +682,17 @@ namespace fermat {
             }
 
             template <class F, class... Args>
-            static decltype(turbo::container_internal::DecomposePair(
+            static decltype(fermat::memory::decompose_pair(
                 std::declval<F>(), std::declval<Args>()...))
             apply(F&& f, Args&&... args) {
-                return turbo::container_internal::DecomposePair(std::forward<F>(f),
+                return fermat::memory::decompose_pair(std::forward<F>(f),
                     std::forward<Args>(args)...);
             }
 
             template <class Hash, bool kIsDefault>
-            static constexpr turbo::container_internal::HashSlotFn get_hash_slot_fn() {
-                return turbo::container_internal::memory_internal::IsLayoutCompatible<K, V>::value
-                    ? &turbo::container_internal::TypeErasedApplyToSlotFn<Hash, K, kIsDefault>
+            static constexpr HashSlotFn get_hash_slot_fn() {
+                return fermat::memory::memory_internal::IsLayoutCompatible<K, V>::value
+                    ? &type_erased_apply_to_slot_fn<Hash, K, kIsDefault>
                     : nullptr;
             }
 

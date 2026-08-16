@@ -24,7 +24,7 @@
 #include <fermat/base/common_policy_traits.h>
 #include <fermat/hashmaps/internal/raw_hash_set.h> // IWYU pragma: export
 #include <turbo/macros/config.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <turbo/meta/type_traits.h>
 
 namespace fermat::container_internal {
@@ -282,7 +282,7 @@ namespace fermat::container_internal {
             MappedReference<P> at(const key_arg<K>& key) KUMO_ATTRIBUTE_LIFETIME_BOUND {
                 auto it = this->find(key);
                 if (it == this->end()) {
-                    turbo::ThrowStdOutOfRange("turbo::container_internal::raw_hash_map<>::at");
+                    turbo::ThrowStdOutOfRange("fermat::container_internal::raw_hash_map<>::at");
                 }
                 return Policy::value(&*it);
             }
@@ -292,7 +292,7 @@ namespace fermat::container_internal {
                 KUMO_ATTRIBUTE_LIFETIME_BOUND {
                 auto it = this->find(key);
                 if (it == this->end()) {
-                    turbo::ThrowStdOutOfRange("turbo::container_internal::raw_hash_map<>::at");
+                    turbo::ThrowStdOutOfRange("fermat::container_internal::raw_hash_map<>::at");
                 }
                 return Policy::value(&*it);
             }

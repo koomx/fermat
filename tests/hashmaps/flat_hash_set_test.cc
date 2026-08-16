@@ -26,7 +26,7 @@
 #include <gtest/gtest.h>
 #include <turbo/macros/config.h>
 #include <fermat/hashmaps/hash_container_defaults.h>
-#include <turbo/memory/container_memory.h>
+#include <fermat/memory/container_memory.h>
 #include <tests/hashmaps/internal/hash_generator_testing.h>
 #include <tests/base/internal/test_allocator.h>
 #include <tests/hashmaps/internal/unordered_set_constructor_test.h>
@@ -224,14 +224,14 @@ class PoisonSoo {
   int64_t data_;
 
  public:
-  explicit PoisonSoo(int64_t d) : data_(d) { turbo::container_internal::SanitizerPoisonObject(&data_); }
+  explicit PoisonSoo(int64_t d) : data_(d) { fermat::memory::sanitizer_poison_object(&data_); }
   PoisonSoo(const PoisonSoo& that) : PoisonSoo(*that) {}
-  ~PoisonSoo() { turbo::container_internal::SanitizerUnpoisonObject(&data_); }
+  ~PoisonSoo() { fermat::memory::sanitizer_unpoison_object(&data_); }
 
   int64_t operator*() const {
-    turbo::container_internal::SanitizerUnpoisonObject(&data_);
+    fermat::memory::sanitizer_unpoison_object(&data_);
     const int64_t ret = data_;
-    turbo::container_internal::SanitizerPoisonObject(&data_);
+    fermat::memory::sanitizer_poison_object(&data_);
     return ret;
   }
   template <typename H>
@@ -409,8 +409,8 @@ TEST(FlatHashSet, FromRange) {
 
 TEST(FlatHashSet, FromRangeWithAllocator) {
   std::vector<int> v = {1, 2, 3, 4, 5};
-  fermat::flat_hash_set<int, turbo::container_internal::hash_default_hash<int>,
-                      turbo::container_internal::hash_default_eq<int>,
+  fermat::flat_hash_set<int, fermat::container_internal::hash_default_hash<int>,
+                      fermat::container_internal::hash_default_eq<int>,
                       Alloc<int>>
       s(std::from_range, v, 0, Alloc<int>());
   EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));
@@ -418,9 +418,9 @@ TEST(FlatHashSet, FromRangeWithAllocator) {
 
 TEST(FlatHashSet, FromRangeWithHasherAndAllocator) {
   std::vector<int> v = {1, 2, 3, 4, 5};
-  using TestingHash = turbo::container_internal::StatefulTestingHash;
+  using TestingHash = fermat::container_internal::StatefulTestingHash;
   fermat::flat_hash_set<int, TestingHash,
-                      turbo::container_internal::hash_default_eq<int>,
+                      fermat::container_internal::hash_default_eq<int>,
                       Alloc<int>>
       s(std::from_range, v, 0, TestingHash{}, Alloc<int>());
   EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));
