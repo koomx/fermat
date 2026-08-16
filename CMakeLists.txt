@@ -19,7 +19,7 @@
 
 cmake_minimum_required(VERSION 3.31)
 
-project(fermat CXX)
+project(fermat CXX C)
 
 option(${PROJECT_NAME}_IS_TOP_PROJECT "fermat project is the top level project or not" ON)
 

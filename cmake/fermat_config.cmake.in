@@ -28,6 +28,8 @@ set(@PROJECT_NAME@_VERSION_PATCH @PROJECT_VERSION_PATCH@)
 set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@)
 set(@PROJECT_NAME@_INCLUDE_DIR ${PACKAGE_PREFIX_DIR}/include)
 
+find_package(turbo REQUIRED)
+
 # Do not use global include_directories() here.
 # Consumers should get include paths from imported target properties
 # (INTERFACE_INCLUDE_DIRECTORIES) via @PROJECT_NAME@Targets.cmake.

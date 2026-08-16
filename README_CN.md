@@ -13,8 +13,44 @@ fermat
 
 [English](./README.md)
 
+进程内查找与小集合用的 C++ 容器：Swiss table 哈希、有序 vector、b-tree、HAT-trie、
+自适应基数树（ART）、Roaring bitmap。构建系统是
+[kmcmake](https://github.com/koomx/kmcmake)。
 
-fermat 项目说明
+**不在本仓库：** bit/整数编解码（PFor、ZFP 等）应放独立编码库。这里的 Roaring 是
+**整数集合**，不是 bitstream codec。
+
+给 Agent：先读 [`fermat/skills.h`](fermat/skills.h) 和
+[`docs/CONTAINERS.md`](docs/CONTAINERS.md)，不要扫全库源码。
+
+## 选型
+
+| 需求 | 类型 | 头文件 |
+|------|------|--------|
+| 默认大表无序 map/set | `fermat::flat_hash_map` / `flat_hash_set` | `<fermat/hashmaps/flat_hash_map.h>` |
+| 很小的表（HTTP query/header） | `fermat::vector_map` | `<fermat/maps/vector_map.h>` |
+| 指针稳定 | `fermat::node_hash_*` | `<fermat/hashmaps/node_hash_map.h>` |
+| 插入序 | `fermat::linked_hash_*` | `<fermat/hashmaps/linked_hash_map.h>` |
+| 有序 / 范围扫描 | `fermat::btree_map` / `btree_set` | `<fermat/maps/btree_map.h>` |
+| 字符串前缀 / 词典 | `fermat::htrie_map` / `htrie_set` | `<fermat/trie/hat/htrie_map.h>` |
+| 字节串索引（`const char*`） | `fermat::Art<T>` | `<fermat/art/art.h>` |
+| 整数集合、交并差 | `fermat::roaring::Roaring` | `<fermat/roaring/roaring.hpp>` |
+| 分块队列 | `fermat::chunked_queue` | `<fermat/queue/chunked_queue.h>` |
+| 侵入式链表 | intrusive list | `<fermat/list/intrusive_list.h>` |
+
+细节见 [docs/CONTAINERS.md](docs/CONTAINERS.md)。
+
+## 目录
+
+```
+fermat/           公开头与库源码
+tests/            GTest
+benchmark/        Google Benchmark + Roaring 统一 bench
+examples/         Roaring demo（KMCMAKE_BUILD_EXAMPLES）
+docs/             AI.md、CONTAINERS.md、kmcmake 指南
+```
+
+头文件从仓库根包含：`#include <fermat/hashmaps/flat_hash_map.h>`。
 
 ## 🛠️ Build
 
@@ -26,6 +62,8 @@ fermat 项目说明
 
 无后缀为 Ninja（`build/`）；`-make` 为 Unix Makefiles（`build-make/`）。
 `default` / `default-make` 不写 cache 变量。无范围后缀的 `cpm` / `vcpkg` 只编库。
+
+测试依赖 GTest。多数 bench 依赖 Google Benchmark；`roaring_all_benchmark` 自带 main。
 
 ### 0. 准备环境
 
@@ -66,10 +104,23 @@ cmake --build build-make -j$(nproc)
 
 ### 3. 运行测试(可选)
 
-在项目根目录执行：
-
 ```shell
 ctest --test-dir build
 # 若使用 -make preset：
 ctest --test-dir build-make
 ```
+
+Roaring 测例名为 `roaring_<case>`。Roaring demo 在 `examples/`，不在 tests。
+
+### 4. 基准（可选）
+
+```bash
+./build/benchmark/art/art_all_benchmark
+./build/benchmark/roaring/roaring_all_benchmark --help
+```
+
+Roaring 真实数据集在 `refs/CRoaring-master/benchmarks/realdata`。
+
+## 许可证
+
+Fermat 自有代码 Apache-2.0。HAT-trie、CRoaring、Swiss table 等上游许可证见各头文件。

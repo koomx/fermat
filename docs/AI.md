@@ -2,7 +2,16 @@
 
 This file describes the kmcmake template structure and conventions for AI assistants.
 
-**Also read:** `docs/c_cpp_project_rules.md`, `docs/AI_MIGRATE.md` (plain CMake → kmcmake), `docs/AI_UPGRADE.md` (existing kmcmake → 1.7), `docs/VCPKG.md` (standard port).
+**Fermat (this repo)** is a **container library**, not an empty kmcmake skeleton.
+Before scanning sources, read:
+
+- [`fermat/skills.h`](../fermat/skills.h) — public API and “do not scan” map
+- [`docs/CONTAINERS.md`](CONTAINERS.md) — which container to use
+- [`README.md`](../README.md) — build and layout
+
+Do **not** add bit codecs here. Do **not** edit `kmcmake/` unless asked.
+
+**Also read (kmcmake):** `docs/c_cpp_project_rules.md`, `docs/AI_MIGRATE.md` (plain CMake → kmcmake), `docs/AI_UPGRADE.md` (existing kmcmake → 1.7), `docs/VCPKG.md` (standard port).
 
 ## AI Constraints
 

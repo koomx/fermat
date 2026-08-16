@@ -1,0 +1,7 @@
+{
+  "dependencies": [
+    "qtest",
+    "turbo",
+    "benchmark"
+  ]
+}

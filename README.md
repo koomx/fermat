@@ -13,8 +13,51 @@ fermat
 
 [中文版](./README_CN.md)
 
+C++ containers for in-process lookup and small collections: Swiss-table hashes,
+sorted vectors, b-trees, HAT-trie, Adaptive Radix Tree (ART), and Roaring
+bitmaps. Built with [kmcmake](https://github.com/koomx/kmcmake).
 
-fermat Project Description
+**Not in this repo:** bit/integer codecs (PFor, ZFP, and similar). Those belong
+in a separate encoding library. Roaring here is a *set of integers*, not a
+bitstream codec.
+
+Agents: read [`fermat/skills.h`](fermat/skills.h) and
+[`docs/CONTAINERS.md`](docs/CONTAINERS.md) before scanning sources.
+
+## Choose a container
+
+| Need | Type | Header |
+|------|------|--------|
+| Default large unordered map/set | `fermat::flat_hash_map` / `flat_hash_set` | `<fermat/hashmaps/flat_hash_map.h>` |
+| Tiny map (HTTP query/headers, few entries) | `fermat::vector_map` | `<fermat/maps/vector_map.h>` |
+| Pointer-stable nodes | `fermat::node_hash_map` / `node_hash_set` | `<fermat/hashmaps/node_hash_map.h>` |
+| Insertion order | `fermat::linked_hash_map` / `linked_hash_set` | `<fermat/hashmaps/linked_hash_map.h>` |
+| Ordered keys / range scan | `fermat::btree_map` / `btree_set` | `<fermat/maps/btree_map.h>` |
+| String prefix / dictionary | `fermat::htrie_map` / `htrie_set` | `<fermat/trie/hat/htrie_map.h>` |
+| Byte-string index (`const char*`) | `fermat::Art<T>` | `<fermat/art/art.h>` |
+| Integer set, union/intersect | `fermat::roaring::Roaring` | `<fermat/roaring/roaring.hpp>` |
+| Chunked FIFO | `fermat::chunked_queue` | `<fermat/queue/chunked_queue.h>` |
+| Intrusive list | intrusive list | `<fermat/list/intrusive_list.h>` |
+
+Details and anti-patterns: [docs/CONTAINERS.md](docs/CONTAINERS.md).
+
+## Layout
+
+```
+fermat/           public headers + library sources
+  hashmaps/       Swiss tables (Abseil-style)
+  maps/           vector_* and btree_*
+  trie/hat/       HAT-trie
+  art/            Adaptive Radix Tree
+  roaring/        CRoaring (C++ API in fermat::roaring)
+  queue/ list/ memory/ base/
+tests/            GTest
+benchmark/        Google Benchmark (ART) + CRoaring unified bench
+examples/         Roaring demos (KMCMAKE_BUILD_EXAMPLES)
+docs/             AI.md, CONTAINERS.md, kmcmake guides
+```
+
+Include from the repo root: `#include <fermat/hashmaps/flat_hash_map.h>`.
 
 ## 🛠️ Build
 
@@ -26,6 +69,9 @@ This project is built with CMake presets. Three dependency channels (no auto-det
 
 Unsuffixed names use Ninja (`build/`). Names ending in `-make` use Unix Makefiles (`build-make/`).
 `default` / `default-make` set no cache variables. Unsuffixed `cpm` / `vcpkg` build libraries only.
+
+Tests need GTest (`find_package(GTest)`). Benchmarks need `benchmark` except
+`roaring_all_benchmark`, which has its own main.
 
 ### 0. Prepare the environment
 
@@ -67,10 +113,27 @@ cmake --build build-make -j$(nproc)
 
 ### 3. Run Tests (Optional)
 
-Run in the project root directory:
-
 ```shell
 ctest --test-dir build
 # or, if you used a -make preset:
 ctest --test-dir build-make
 ```
+
+Roaring GTest binaries are named `roaring_<case>`. Roaring examples live under
+`examples/` (`c_example1`, `cpp_readme_example`, …), not under tests.
+
+### 4. Benchmarks (Optional)
+
+```bash
+# Swiss table / btree / queue / ART (Google Benchmark)
+./build/benchmark/art/art_all_benchmark
+./build/benchmark/hashmaps/hashmaps_raw_hash_set_benchmark
+
+# CRoaring unified bench (own harness; datasets under refs/CRoaring-master/benchmarks/realdata)
+./build/benchmark/roaring/roaring_all_benchmark --help
+```
+
+## License
+
+Apache-2.0 for Fermat-owned code. Vendored pieces keep their upstream licenses
+(HAT-trie MIT, CRoaring / Abseil-derived tables as in their headers).

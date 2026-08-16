@@ -15,3 +15,12 @@
 #
 
 configure_file(${PROJECT_SOURCE_DIR}/benchmark/config.h.in ${PROJECT_SOURCE_DIR}/benchmark/config.h @ONLY)
+
+find_package(benchmark REQUIRED)
+
+add_subdirectory(art)
+add_subdirectory(base)
+add_subdirectory(hashmaps)
+add_subdirectory(maps)
+add_subdirectory(queue)
+add_subdirectory(roaring)

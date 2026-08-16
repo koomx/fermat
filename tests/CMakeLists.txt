@@ -14,3 +14,15 @@
 #
 
 configure_file(${PROJECT_SOURCE_DIR}/tests/config.h.in ${PROJECT_SOURCE_DIR}/tests/config.h @ONLY)
+
+find_package(GTest REQUIRED)
+
+add_subdirectory(art)
+add_subdirectory(base)
+add_subdirectory(hashmaps)
+add_subdirectory(list)
+add_subdirectory(maps)
+add_subdirectory(memory)
+add_subdirectory(queue)
+add_subdirectory(trire)
+add_subdirectory(roaring)
