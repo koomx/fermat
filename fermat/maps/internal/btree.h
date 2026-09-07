@@ -121,15 +121,15 @@ namespace fermat::container_internal {
             StringBtreeDefaultLess(std::less<turbo::Cord>) { } // NOLINT
             turbo::weak_ordering operator()(const turbo::Cord& lhs,
                 const turbo::Cord& rhs) const {
-                return turbo::compare_internal::compare_result_as_ordering(lhs.Compare(rhs));
+                return turbo::compare_internal::compare_result_as_ordering(lhs.compare(rhs));
             }
             turbo::weak_ordering operator()(const turbo::Cord& lhs,
                 std::string_view rhs) const {
-                return turbo::compare_internal::compare_result_as_ordering(lhs.Compare(rhs));
+                return turbo::compare_internal::compare_result_as_ordering(lhs.compare(rhs));
             }
             turbo::weak_ordering operator()(std::string_view lhs,
                 const turbo::Cord& rhs) const {
-                return turbo::compare_internal::compare_result_as_ordering(-rhs.Compare(lhs));
+                return turbo::compare_internal::compare_result_as_ordering(-rhs.compare(lhs));
             }
         };
 
@@ -153,15 +153,15 @@ namespace fermat::container_internal {
             StringBtreeDefaultGreater(std::greater<turbo::Cord>) { } // NOLINT
             turbo::weak_ordering operator()(const turbo::Cord& lhs,
                 const turbo::Cord& rhs) const {
-                return turbo::compare_internal::compare_result_as_ordering(rhs.Compare(lhs));
+                return turbo::compare_internal::compare_result_as_ordering(rhs.compare(lhs));
             }
             turbo::weak_ordering operator()(const turbo::Cord& lhs,
                 std::string_view rhs) const {
-                return turbo::compare_internal::compare_result_as_ordering(-lhs.Compare(rhs));
+                return turbo::compare_internal::compare_result_as_ordering(-lhs.compare(rhs));
             }
             turbo::weak_ordering operator()(std::string_view lhs,
                 const turbo::Cord& rhs) const {
-                return turbo::compare_internal::compare_result_as_ordering(rhs.Compare(lhs));
+                return turbo::compare_internal::compare_result_as_ordering(rhs.compare(lhs));
             }
         };
 

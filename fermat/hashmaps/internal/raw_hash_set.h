@@ -3051,8 +3051,8 @@ namespace fermat::container_internal {
                 if (is_small())
                     return;
                 auto seq = probe(common(), hash_of(key));
-                turbo::PrefetchToLocalCache(control() + seq.offset());
-                turbo::PrefetchToLocalCache(slot_array(capacity()) + seq.offset());
+                turbo::prefetch_to_local_cache(control() + seq.offset());
+                turbo::prefetch_to_local_cache(slot_array(capacity()) + seq.offset());
 #endif // TURBO_HAVE_PREFETCH
             }
 
@@ -3249,7 +3249,7 @@ namespace fermat::container_internal {
                 slot_type* slot_array = to_slot(common().slot_array(cap));
                 while (true) {
 #ifndef TURBO_HAVE_MEMORY_SANITIZER
-                    turbo::PrefetchToLocalCache(slot_array + seq.offset());
+                    turbo::prefetch_to_local_cache(slot_array + seq.offset());
 #endif
                     Group g { ctrl + seq.offset() };
                     for (uint32_t i : g.Match(h2)) {
@@ -3504,7 +3504,7 @@ namespace fermat::container_internal {
                 slot_type* slot_array = to_slot(common().slot_array(cap));
                 while (true) {
 #ifndef TURBO_HAVE_MEMORY_SANITIZER
-                    turbo::PrefetchToLocalCache(slot_array + seq.offset());
+                    turbo::prefetch_to_local_cache(slot_array + seq.offset());
 #endif
                     Group g { ctrl + seq.offset() };
                     for (uint32_t i : g.Match(h2)) {

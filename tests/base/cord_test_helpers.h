@@ -104,9 +104,9 @@ Cord MakeFragmentedCord(const Container& c) {
   Cord result;
   for (const auto& s : c) {
     auto* external = new std::string(s);
-    Cord tmp = turbo::MakeCordFromExternal(
+    Cord tmp = turbo::make_cord_from_external(
         *external, [external](std::string_view) { delete external; });
-    tmp.Prepend(result);
+    tmp.prepend(result);
     result = tmp;
   }
   return result;

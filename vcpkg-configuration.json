@@ -1,7 +1,7 @@
 {
   "default-registry": {
     "kind": "git",
-    "baseline": "706efe29f6c01097e9b61e2dde8a7db37df27c09",
+    "baseline": "4e71de113ee7e352c4dff4eee66f18a4f082c488",
     "repository": "https://github.com/koomx/kumo-vcpkg.git"
   }
 }
